@@ -13,19 +13,21 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '16'
-      - name: npm install
-        env:
-          CI: true
-        run : |
-          npm ci
-      - name: Build
-        run: npm run build
-      
-      - name: Deploy to Lambda
-        uses: appleboy/lambda-action@v1
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: ca-central-1
           function_name: player-ex2-function
           zip_file: dist/lambda.zip
+      - name: npm install
+        env:
+          CI: true
+        run : |
+          npm ci
+      - name: deploy
+        run: |
+          npx ncc build index.ts
+          zip -j deploy.zip ./dist/*
+          aws lambda update-function-code --function-name=lambda-gh-action --zip-file=fileb://deploy.zip
